@@ -1,0 +1,14 @@
+{
+  "name": "aims-platform",
+  "private": true,
+  "description": "AIMS internal platform: frontend prototype today, backend to come.",
+  "scripts": {
+    "install:all": "npm --prefix frontend install",
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "start": "npm --prefix frontend start",
+    "lint": "npm --prefix frontend run lint",
+    "typecheck": "npm --prefix frontend run typecheck",
+    "test": "npm --prefix frontend test"
+  }
+}
