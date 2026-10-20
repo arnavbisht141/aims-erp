@@ -1,13 +1,16 @@
-# Backend (not started)
+# Backend & Data Architecture
 
-Reserved for the AIMS API. The prototype in `../frontend` runs entirely on in-memory sample data, so nothing here is required to run it.
+The agreed technology stack for AIMS EMS adopts a **unified full-stack Next.js application** hosted on Vercel with **Neon PostgreSQL** and **Drizzle ORM** (see [ADR-01 in docs/08-decisions-and-roadmap.md](file:///d:/Main_Files/Projects/aims-erp/docs/08-decisions-and-roadmap.md)).
 
-## When you start
+Rather than maintaining a separate Express or FastAPI service in this directory, backend capabilities (API endpoints, Server Actions, authorization guards, and Drizzle database queries) will reside directly within the Next.js project.
 
-- **Domain model:** `../frontend/src/types/index.ts` defines the entities the UI expects (members, resources, assignments, attendance, progress items, polls, votes, tasks, comments, invitations). Treat it as the first draft of the API contract and adjust deliberately.
-- **Permission rules:** `../frontend/src/lib/permissions.ts` lists the intended rules. They are browser-only in the prototype, so re-implement and enforce them server-side.
-- **State changes:** the action list in `../frontend/src/state/reducer.ts` maps roughly to the endpoints you will need.
-- **Sample data:** `../frontend/src/data/seed.ts` can seed a development database. It is entirely fictional.
-- **Privacy:** individual attendance and progress must be restricted to the person and authorised leads at the API and data layer, not only in the UI.
+## Architecture Specifications
 
-Record the stack and API-style decisions as short notes in `../docs/` as you make them.
+For the authoritative backend and database specifications, refer to:
+- **Architecture & Technology Stack:** [docs/02-architecture-and-stack.md](file:///d:/Main_Files/Projects/aims-erp/docs/02-architecture-and-stack.md)
+- **Database Schema & Drizzle Queries:** [docs/05-database-and-api-design.md](file:///d:/Main_Files/Projects/aims-erp/docs/05-database-and-api-design.md)
+- **Permissions & Authorization Matrix:** [docs/03-requirements-and-permissions.md](file:///d:/Main_Files/Projects/aims-erp/docs/03-requirements-and-permissions.md)
+
+## Integration Boundary: Statistical Competency Engine
+If a separate Python/FastAPI ML scoring or statistical competency engine is developed by society members in the future, it must remain an external service communicating with Next.js via authenticated HTTP/JSON webhooks. See [docs/02-architecture-and-stack.md](file:///d:/Main_Files/Projects/aims-erp/docs/02-architecture-and-stack.md#32-external-boundary-statistical-competency-engine-confirmed).
+
