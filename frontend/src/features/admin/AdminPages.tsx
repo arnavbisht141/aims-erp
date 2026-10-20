@@ -11,7 +11,7 @@ import { AttendanceBadge, Badge } from "@/components/ui/StatusBadge";
 import { useToast } from "@/components/ui/Toast";
 import { PollsList } from "@/features/polls/PollsPages";
 import { formatDate, formatShortDate, PROGRESS_LABELS, ROLE_LABELS } from "@/lib/formatters";
-import { canAccessAdministration, canManageAttendance, canManageMembers, canManageProgress } from "@/lib/permissions";
+import { canAccessAdministration, canManageAttendance, canManageMembers, canManagePolls, canManageProgress } from "@/lib/permissions";
 import {
   attendanceForSession,
   countAttendance,
@@ -26,6 +26,7 @@ import { useDemo } from "@/state/store";
 import type { AttendanceStatus, ResourceProgress, UserRole } from "@/types";
 
 const LEADS: UserRole[] = ["senior", "admin"];
+const ADMIN_ROLES: UserRole[] = ["attendance_manager", "senior", "admin"];
 
 export function AdminOverviewPage() {
   const { data, role } = useDemo();
@@ -34,8 +35,8 @@ export function AdminOverviewPage() {
   const { totals, rows } = progressOverview(data);
   const open = data.polls.filter((p) => p.status === "open");
   return (
-    <RoleGate allow={canAccessAdministration} area="Administration" allowed={LEADS}>
-      <PageHeader title="Administration" description="Attendance, junior progress and polls. Visible to authorised leads in this demo." />
+    <RoleGate allow={canAccessAdministration} area="Administration" allowed={ADMIN_ROLES}>
+      <PageHeader title="Administration" description="Attendance, junior progress and polls. Visible to authorised leads and managers in this demo." />
       <div className="grid gap-4 lg:grid-cols-3">
         <Panel title="Attendance" id="adm-att">
           <p className="text-sm text-muted">Record who attended each session.</p>
@@ -48,24 +49,28 @@ export function AdminOverviewPage() {
             Mark attendance
           </ButtonLink>
         </Panel>
-        <Panel title="Junior progress" id="adm-prog">
-          <p className="text-sm text-muted">Review and update what each junior is working through.</p>
-          <p className="tabular mt-3 text-sm">
-            {rows.length} juniors · {totals.completed} of {totals.total} items completed ({totals.percent}%)
-          </p>
-          <ButtonLink href="/admin/progress" variant="primary" className="mt-4">
-            Review progress
-          </ButtonLink>
-        </Panel>
-        <Panel title="Polls and decisions" id="adm-polls">
-          <p className="text-sm text-muted">Gather input and record outcomes.</p>
-          <p className="tabular mt-3 text-sm">
-            {open.length} open · {data.polls.length - open.length} closed
-          </p>
-          <ButtonLink href="/admin/polls" variant="primary" className="mt-4">
-            Manage polls
-          </ButtonLink>
-        </Panel>
+        {canManageProgress(role) && (
+          <Panel title="Junior progress" id="adm-prog">
+            <p className="text-sm text-muted">Review and update what each junior is working through.</p>
+            <p className="tabular mt-3 text-sm">
+              {rows.length} juniors · {totals.completed} of {totals.total} items completed ({totals.percent}%)
+            </p>
+            <ButtonLink href="/admin/progress" variant="primary" className="mt-4">
+              Review progress
+            </ButtonLink>
+          </Panel>
+        )}
+        {canManagePolls(role) && (
+          <Panel title="Polls and decisions" id="adm-polls">
+            <p className="text-sm text-muted">Gather input and record outcomes.</p>
+            <p className="tabular mt-3 text-sm">
+              {open.length} open · {data.polls.length - open.length} closed
+            </p>
+            <ButtonLink href="/admin/polls" variant="primary" className="mt-4">
+              Manage polls
+            </ButtonLink>
+          </Panel>
+        )}
       </div>
       {canManageMembers(role) && <MembersPanel />}
     </RoleGate>
@@ -178,7 +183,7 @@ export function AttendancePage() {
   };
 
   return (
-    <RoleGate allow={canManageAttendance} area="Attendance" allowed={LEADS}>
+    <RoleGate allow={canManageAttendance} area="Attendance" allowed={ADMIN_ROLES}>
       <BackLink href="/admin">Administration</BackLink>
       <PageHeader title="Attendance" description="Mark each person present or absent. Individual records stay in this area." />
       <div className="mb-5 max-w-md">
@@ -349,7 +354,7 @@ function JuniorDetail({ memberId, onChange }: { memberId: string; onChange: (tit
 
 export function AdminPollsPage() {
   return (
-    <RoleGate allow={canAccessAdministration} area="Poll management" allowed={LEADS}>
+    <RoleGate allow={canManagePolls} area="Poll management" allowed={LEADS}>
       <PollsList manage />
     </RoleGate>
   );

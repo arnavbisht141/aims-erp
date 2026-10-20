@@ -1,4 +1,4 @@
-export type UserRole = "member" | "junior" | "senior" | "admin";
+export type UserRole = "member" | "junior" | "senior" | "admin" | "attendance_manager";
 
 export type MembershipStatus = "active" | "alumni" | "inactive";
 
@@ -19,6 +19,7 @@ export interface Member {
   skills: string[];
   interests: string[];
   codingProfiles: CodingProfile[];
+  avatarUrl?: string;
 }
 
 export type ResourceType =

@@ -12,6 +12,7 @@ export const DEMO_PERSONAS: Record<UserRole, string> = {
   junior: "m06",
   senior: "m02",
   admin: "m01",
+  attendance_manager: "m13",
 };
 
 export const DEFAULT_DEMO_ROLE: UserRole = "junior";
@@ -209,6 +210,19 @@ export const seedData: DemoData = {
         { label: "GitHub", url: "https://github.example.com/rohan-das" },
         { label: "LeetCode", url: "https://leetcode.example.com/u/rohandas" },
       ],
+    },
+    {
+      id: "m13",
+      name: "Devansh Joshi",
+      email: "devansh.joshi@aims.example",
+      role: "attendance_manager",
+      membershipStatus: "active",
+      yearLabel: "2nd year",
+      department: "Events & Operations",
+      bio: "Attendance & Workshop Operations Lead. Coordinates roll-call and logistics for society hackathons and weekend tracks.",
+      skills: ["Operations", "Spreadsheets", "Logistics"],
+      interests: ["Society Growth", "Event Management"],
+      codingProfiles: [],
     },
   ],
 

@@ -31,6 +31,21 @@
 - **Decision:** If a statistical competency scoring engine is built in Python/FastAPI in the future, it must remain an external service communicating via secure HTTP/JSON webhooks.
 - **Rationale:** Prevents coupling experimental Python ML dependencies into the Next.js production build pipeline.
 
+### ADR-06: Dual-Mode Embedded PostgreSQL (PGlite) & Neon Cloud Parity `[Implemented]`
+- **Context:** Developers needed a local database that operates completely offline without requiring local PostgreSQL service installation, Docker daemons, or internet connectivity, while guaranteeing seamless compatibility with cloud Neon DB.
+- **Decision:** Use `@electric-sql/pglite` (embedded WebAssembly PostgreSQL) for local development persisting to `.data/aims-pglite`, and switch automatically to `@neondatabase/serverless` when `DATABASE_URL` is set in production.
+- **Rationale:** PGlite runs a real, full-featured PostgreSQL 16 engine in-process compiled to WASM. It executes the identical Drizzle PostgreSQL schema, constraints, enums, and queries as Neon PostgreSQL, with zero Docker or local database service setup required.
+
+### ADR-07: Session Authentication & Dedicated Sign-In Flow `[Implemented]`
+- **Context:** Moving beyond UI-only role mocking to persistent, secure authentication.
+- **Decision:** Implement database-backed sessions in the `sessions` table with HTTP-only cookies (`aims_session_token`), a dedicated `/sign-in` screen with credential validation (email + bcrypt/crypto hash), and 1-click persona switching for development.
+- **Rationale:** Keeps local development 100% self-contained without requiring internet connectivity to Clerk during initial building, while establishing the exact same `getCurrentMember()` session guard interface for seamless Clerk migration in cloud production.
+
+### ADR-08: Dedicated Attendance Manager Role (`attendance_manager`) `[Implemented]`
+- **Context:** Event coordinators and 2nd/3rd year leads need to take roll-call attendance at workshops without gaining access to confidential junior learning milestone evaluations.
+- **Decision:** Add `attendance_manager` to the `user_role` enum and enforce least-privilege access across the UI and server action layers.
+- **Rationale:** Restricts attendance managers to `/admin/attendance` roll-call and aggregate counts, strictly hiding and barring access to junior progress reviews, poll creation, and member invitation management.
+
 ---
 
 ## 2. Phased Implementation Roadmap `[Confirmed]`
@@ -46,21 +61,34 @@
                                     │
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────┐
-│  Phase 2: Production Foundation & Auth Integration     [Proposed/Next] │
-│  • Elevate repository structure to unified Next.js project             │
-│  • Provision Neon PostgreSQL database and apply Drizzle migrations     │
-│  • Configure Clerk project and Next.js middleware                      │
-│  • Implement user webhook sync from Clerk to Neon `members` table      │
+│  Phase 2: Database Layer, Auth & v1 Production Base     [Implemented]  │
+│  • Full Drizzle PostgreSQL schema (16 tables, enums, relations)        │
+│  • Dual-mode DB: Embedded local PGlite (.data) + Neon Serverless Cloud │
+│  • Database-backed Session Auth with HTTP-only cookies & Next.js proxy │
+│  • Dedicated Sign-In Page (/sign-in) + Quick-Access Role Personas      │
+│  • Dedicated Attendance Manager role (`attendance_manager`)            │
+│  • Server Actions & Server-Side RBAC for attendance, polls, resources  │
+│  • 24 Vitest tests passing; zero TypeScript errors; zero build errors  │
 └───────────────────────────────────┬────────────────────────────────────┘
                                     │
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────┐
-│  Phase 3: Administrative Workflows Persistence         [Proposed]      │
-│  • Migrate Attendance roll-call to Neon (session creation & bulk mark) │
-│  • Migrate Junior Progress milestone tracking & resource assignments   │
-│  • Migrate Poll creation, single-choice voting & DB unique constraints │
-│  • Implement Audit Logging table for administrative actions            │
+│  Phase 3: Administrative Workflows Persistence & Cloud [Proposed/Next] │
+│  • Connect Neon PostgreSQL cloud project via DATABASE_URL              │
+│  • Connect Clerk production identity provider                          │
+│  • Expand client page components to consume server actions directly    │
+│  • Implement Audit Logging table UI for administrative actions         │
 └───────────────────────────────────┬────────────────────────────────────┘
+                                    │
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│  Phase 4: Collaboration, Files & External Notifications [Proposed]     │
+│  • Community Tasks & Comment threads on resources                      │
+│  • Cloudflare R2 file storage for workshop PDFs / slide decks          │
+│  • Resend transactional emails for official meeting summons            │
+│  • Sentry error monitoring integration                                 │
+└────────────────────────────────────────────────────────────────────────┘
+```
                                     │
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -74,23 +102,13 @@
 
 ---
 
-## 3. Explicit Open Questions for Society Leads (Arnav & Vaatsalya) `[Open Question]`
+## 3. Explicit Decisions & Open Questions for Society Leads (Arnav & Vaatsalya)
 
-The following decisions require explicit human confirmation from the lead maintainers before code implementation in Phase 2:
+### Question 1: Repository Directory Structure Consolidation `[Resolved]`
+- **Status:** Resolved. The project retains the current `frontend/` directory structure with root script forwarding (`npm run dev`, `test`, `build`, etc.) to minimize diff churn and keep root workspace clean.
 
-### Question 1: Repository Directory Structure Consolidation
-- **Context:** Currently, the repo contains root `package.json`, `frontend/`, and an empty `backend/README.md`.
-- **Options:**
-  - *Option A (Recommended):* Elevate `frontend/` to the repository root. Eliminate the nested `frontend/` folder. Root `package.json` runs Next.js directly. This simplifies Vercel deployments, Dockerfiles, and linting.
-  - *Option B:* Retain `frontend/` and `backend/` monorepo folders, treating the root as an npm workspace.
-- **Recommendation:** Option A. Since Next.js is the confirmed full-stack application, an empty `backend/` folder adds cognitive overhead.
-
-### Question 2: Dedicated Attendance Manager Role
-- **Context:** In the prototype, attendance marking is permitted for `senior` leads and `admin`.
-- **Options:**
-  - *Option A (Recommended):* Introduce an `attendance_manager` role/permission. Allows 2nd/3rd year event coordinators to record attendance at workshops without granting access to junior learning progress evaluations.
-  - *Option B:* Keep attendance marking coupled to the general `senior` role.
-- **Recommendation:** Option A for principle of least privilege.
+### Question 2: Dedicated Attendance Manager Role `[Resolved & Implemented]`
+- **Status:** Implemented. Dedicated `attendance_manager` role added to schema enum and enforced across server actions and UI. Attendance managers can mark roll call and view aggregate counts, but cannot view junior learning progress evaluations or administer polls.
 
 ### Question 3: DTU Domain Authentication Restriction
 - **Context:** Clerk supports Google OAuth and email signups.

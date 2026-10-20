@@ -64,6 +64,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   junior: "Junior",
   senior: "Senior lead",
   admin: "Administrator",
+  attendance_manager: "Attendance manager",
 };
 
 export const MEMBERSHIP_LABELS: Record<MembershipStatus, string> = {

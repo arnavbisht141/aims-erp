@@ -106,7 +106,7 @@ The interface must serve two very different physical contexts:
 
 | Component | Desktop (>= 1024px) | Mobile (< 768px) |
 |---|---|---|
-| **Navigation** | Persistent left sidebar (240px) with icons and text labels. | Collapsible slide-in drawer triggered via ☰ hamburger header. |
+| **Navigation** | Sticky Top Navbar (`h-16`) with brand badge, centered horizontal navigation links, theme toggle, and account profile dropdown. | Sticky top bar with brand badge and hamburger trigger opening an accessible mobile navigation sheet drawer with >= 48px touch targets. |
 | **Attendance Roll-Call** | Wide table with quick action toggle buttons per row and bulk controls. | Card-based roll-call view with comfortable 48px touch targets. |
 | **Modals & Dialogs** | Centered floating modal (`max-width: 560px` or `720px`). | Bottom sheet or full-width drawer with swipe/dismiss touch targets. |
 | **Form Inputs** | Two-column grid where logical (e.g. Type + Topic). | Strict single-column vertical stack with native keyboard awareness. |

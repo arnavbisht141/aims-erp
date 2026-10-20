@@ -128,7 +128,7 @@ export function isAttendanceStatus(value: string): value is AttendanceStatus {
   return (ATTENDANCE_STATUSES as string[]).includes(value);
 }
 
-const ROLES: UserRole[] = ["member", "junior", "senior", "admin"];
+const ROLES: UserRole[] = ["member", "junior", "senior", "admin", "attendance_manager"];
 
 export function isUserRole(value: unknown): value is UserRole {
   return typeof value === "string" && (ROLES as string[]).includes(value);

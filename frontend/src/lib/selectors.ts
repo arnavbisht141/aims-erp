@@ -59,7 +59,7 @@ export function distinctValues(values: (string | undefined)[]): string[] {
 }
 
 export function membershipSummary(data: DemoData) {
-  const byRole: Record<UserRole, number> = { member: 0, junior: 0, senior: 0, admin: 0 };
+  const byRole: Record<UserRole, number> = { member: 0, junior: 0, senior: 0, admin: 0, attendance_manager: 0 };
   let active = 0;
   let alumni = 0;
   for (const member of data.members) {

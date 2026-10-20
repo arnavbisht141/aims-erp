@@ -8,19 +8,36 @@ import type { Poll, Resource, Task, UserRole } from "@/types";
  * server and in the data layer.
  */
 
-/** Senior (authorised lead) and admin demo roles. */
+/** Senior (authorised lead) and admin roles. */
 export function isLead(role: UserRole): boolean {
   return role === "senior" || role === "admin";
 }
 
-export const canAccessAdministration = isLead;
-export const canManageAttendance = isLead;
-export const canManageProgress = isLead;
-export const canManagePolls = isLead;
-export const canAssignResources = isLead;
-export const canReviewResources = isLead;
-export const canCreateTasks = isLead;
-export const canViewAllTasks = isLead;
+export function canAccessAdministration(role: UserRole): boolean {
+  return isLead(role) || role === "attendance_manager";
+}
+
+export function canManageAttendance(role: UserRole): boolean {
+  return isLead(role) || role === "attendance_manager";
+}
+export function canManageProgress(role: UserRole): boolean {
+  return role === "senior" || role === "admin";
+}
+export function canManagePolls(role: UserRole): boolean {
+  return role === "senior" || role === "admin";
+}
+export function canAssignResources(role: UserRole): boolean {
+  return role === "senior" || role === "admin";
+}
+export function canReviewResources(role: UserRole): boolean {
+  return role === "senior" || role === "admin";
+}
+export function canCreateTasks(role: UserRole): boolean {
+  return role === "senior" || role === "admin";
+}
+export function canViewAllTasks(role: UserRole): boolean {
+  return role === "senior" || role === "admin";
+}
 
 /** Invitations and role assignment are administrator-only. */
 export function canManageMembers(role: UserRole): boolean {
@@ -44,7 +61,7 @@ export function canViewIndividualAttendance(
   currentMemberId: string,
   targetMemberId: string,
 ): boolean {
-  return isLead(role) || currentMemberId === targetMemberId;
+  return isLead(role) || role === "attendance_manager" || currentMemberId === targetMemberId;
 }
 
 /** Pending suggestions are visible to their submitter and to reviewers. */

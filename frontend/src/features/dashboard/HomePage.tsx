@@ -23,13 +23,15 @@ import {
   visibleResources,
 } from "@/lib/selectors";
 import { useDemo } from "@/state/store";
+import type { UserRole } from "@/types";
 
-const DESCRIPTIONS = {
+const DESCRIPTIONS: Record<UserRole, string> = {
   member: "Your AIMS workspace. See what is new and what is waiting for you.",
   junior: "Your AIMS workspace. Pick up where you left off.",
   senior: "Your AIMS workspace. Here is what needs a lead's attention.",
   admin: "Your AIMS workspace. A look at the whole society.",
-} as const;
+  attendance_manager: "Your AIMS workspace. Roll-call and session operations.",
+};
 
 export function HomePage() {
   const { data, role, currentMember, ready } = useDemo();

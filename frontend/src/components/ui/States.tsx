@@ -39,15 +39,13 @@ export function AccessRestricted({ area, allowed }: { area: string; allowed: Use
     <StateScreen
       icon={<LockKeyhole aria-hidden />}
       title={`${area} is restricted`}
-      action={<ButtonLink href="/" variant="primary">Go to Home</ButtonLink>}
+      action={<ButtonLink href="/" variant="primary">Return to Home</ButtonLink>}
     >
       <p>
-        You are using the <strong className="font-semibold text-fg">{ROLE_LABELS[role]}</strong> demo role. This area is
-        available to the {allowedLabels} role.
+        Your account role is <strong className="font-semibold text-fg">{ROLE_LABELS[role]}</strong>. This area is restricted to the {allowedLabels} role.
       </p>
       <p className="mt-2 text-sm text-subtle">
-        To explore it, switch demo role from the profile menu. In this prototype the check happens in the browser
-        only; it is not real access control.
+        If you need access to this section, please contact an AIMS Society Administrator.
       </p>
     </StateScreen>
   );
@@ -61,8 +59,7 @@ export function NotFoundState({ thing, backHref, backLabel }: { thing: string; b
       action={<ButtonLink href={backHref} variant="primary">{backLabel}</ButtonLink>}
     >
       <p>
-        The link may be out of date, or the item was removed. Demo data resets when you choose “Reset demo data” or
-        close the tab, so items created earlier may no longer exist.
+        The link may be invalid, or the requested {thing.toLowerCase()} does not exist or has been removed.
       </p>
     </StateScreen>
   );

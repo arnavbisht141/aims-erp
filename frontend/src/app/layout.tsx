@@ -12,10 +12,10 @@ const outfit = Outfit({
 
 export const metadata: Metadata = {
   title: {
-    default: "AIMS workspace",
-    template: "%s · AIMS workspace",
+    default: "AIMS Workspace",
+    template: "%s · AIMS Workspace",
   },
-  description: "Interactive prototype of the AIMS (AI & ML Society, DTU) internal workspace. Fictional sample data only.",
+  description: "Official internal workspace for the AI & ML Society of Delhi Technological University (DTU).",
 };
 
 export const viewport: Viewport = {
