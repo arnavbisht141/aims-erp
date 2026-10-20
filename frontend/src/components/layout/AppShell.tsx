@@ -229,7 +229,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
   return (
-    <div className="min-h-dvh flex flex-col bg-bg text-fg">
+    <div className="relative isolate min-h-dvh flex flex-col bg-bg text-fg">
+      {/* Static ambient glow behind every page */}
+      <div className="ambient" aria-hidden>
+        <span className="ambient-a" />
+        <span className="ambient-b" />
+      </div>
       {/* Keyboard Accessibility: Skip to Content */}
       <a
         href="#main"
