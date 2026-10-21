@@ -580,6 +580,16 @@ html[data-splash="show"] .hero-intro * {
   pointer-events: none;
   transition-delay: 0.35s;
 }
+.hero-layer {
+  position: absolute;
+  pointer-events: none;
+  transform: translate3d(
+    calc(var(--px, 0) * var(--depth, 0) * 0.4px),
+    calc(var(--py, 0) * var(--depth, 0) * 0.4px),
+    0
+  );
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
 .story-slides {
   display: grid;
   width: min(100%, 48rem);
@@ -698,6 +708,55 @@ html[data-splash="show"] .hero-intro * {
   }
 }
 
+/* ---- Atmospheric Sign-in & Graphic animations ---- */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes spin-reverse-slow {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+@keyframes float-y {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-7px); }
+}
+@keyframes float-y-delayed {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(8px); }
+}
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 0.75; transform: scale(1.04); }
+}
+@keyframes grid-drift {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(40px); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 40s linear infinite;
+}
+.animate-spin-reverse-slow {
+  animation: spin-reverse-slow 55s linear infinite;
+}
+.animate-float {
+  animation: float-y 4s ease-in-out infinite;
+}
+.animate-float-delayed {
+  animation: float-y-delayed 4.5s ease-in-out 1.2s infinite;
+}
+.animate-pulse-glow {
+  animation: pulse-glow 3.5s ease-in-out infinite;
+}
+
+/* Glass panel utility */
+.glass-card {
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
 /* ---- Reduced motion: show everything, animate nothing ---- */
 @media (prefers-reduced-motion: reduce) {
   .splash,
@@ -712,8 +771,13 @@ html[data-splash="show"] .hero-intro * {
     opacity: 1 !important;
     transform: none !important;
   }
-  .shard-float {
-    animation: none;
+  .shard-float,
+  .animate-spin-slow,
+  .animate-spin-reverse-slow,
+  .animate-float,
+  .animate-float-delayed,
+  .animate-pulse-glow {
+    animation: none !important;
   }
   .shard-move,
   .hero-stage,
@@ -722,3 +786,4 @@ html[data-splash="show"] .hero-intro * {
     transition: none !important;
   }
 }
+

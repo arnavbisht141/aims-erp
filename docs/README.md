@@ -20,6 +20,7 @@ The documentation is organized into modular, purpose-driven specifications. Each
 | [06-engineering-standards.md](file:///d:/Main_Files/Projects/aims-erp/docs/06-engineering-standards.md) | Strict TypeScript, boundary validation (Zod), testing (Vitest), error handling, Git conventions | Developers, Reviewers | Confirmed / Implemented |
 | [07-deployment-and-operations.md](file:///d:/Main_Files/Projects/aims-erp/docs/07-deployment-and-operations.md) | Vercel & Neon branching, Clerk config, quotas & limitations, onboarding guide | DevOps, Lead Maintainers | Confirmed / Proposed |
 | [08-decisions-and-roadmap.md](file:///d:/Main_Files/Projects/aims-erp/docs/08-decisions-and-roadmap.md) | Architecture Decision Records (ADRs), phased roadmap, open questions for society leads | Leads, Architects | Confirmed / Open Questions |
+| [SEEDED_CREDENTIALS.md](file:///d:/Main_Files/Projects/aims-erp/docs/SEEDED_CREDENTIALS.md) | Comprehensive test credentials, roles, Google SSO flow, default password (`aims2026`) | All Developers, Testers | Implemented |
 | [AIMS_PROTOTYPE_IMPLEMENTATION.md](file:///d:/Main_Files/Projects/aims-erp/docs/AIMS_PROTOTYPE_IMPLEMENTATION.md) | *Historical Reference:* Original specification v0.1 for the in-memory prototype | Historical Context | Implemented (v0.1) |
 
 ---

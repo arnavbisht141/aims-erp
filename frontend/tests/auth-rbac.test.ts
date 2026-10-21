@@ -10,7 +10,7 @@ import {
   canViewIndividualProgress,
   isLead,
 } from "@/lib/permissions";
-import { loginAction } from "@/lib/auth/actions";
+import { loginAction, googleSsoLoginAction, getDemoAccountsAction } from "@/lib/auth/actions";
 import { ensureDbReady } from "@/db";
 
 describe("Rule-Based Access Control (RBAC)", () => {
@@ -78,11 +78,16 @@ describe("Authentication & Login Action", () => {
   it("authenticates valid credentials against the local database", async () => {
     await ensureDbReady();
 
-    // Valid admin login
+    // Valid admin login with full email
     const adminRes = await loginAction("riya.malhotra@aims.example", "aims2026");
     expect(adminRes.success).toBe(true);
     expect(adminRes.data?.role).toBe("admin");
     expect(adminRes.data?.name).toBe("Riya Malhotra");
+
+    // Shorthand username without domain (e.g. "riya.malhotra")
+    const shorthandRes = await loginAction("riya.malhotra", "aims2026");
+    expect(shorthandRes.success).toBe(true);
+    expect(shorthandRes.data?.id).toBe("m01");
 
     // Valid junior login
     const juniorRes = await loginAction("arjun.nair@aims.example", "aims2026");
@@ -99,4 +104,28 @@ describe("Authentication & Login Action", () => {
     expect(nonExistent.success).toBe(false);
     expect(nonExistent.error).toContain("No society account found");
   });
+
+  it("authenticates Google / Gmail SSO with Clerk compatibility", async () => {
+    await ensureDbReady();
+
+    // Default SSO signs in as primary administrator
+    const defaultSso = await googleSsoLoginAction();
+    expect(defaultSso.success).toBe(true);
+    expect(defaultSso.data?.role).toBe("admin");
+    expect(defaultSso.data?.ssoProvider).toBe("google");
+
+    // Matching Gmail address prefix (e.g. kabir.sethi@gmail.com)
+    const leadSso = await googleSsoLoginAction("kabir.sethi@gmail.com");
+    expect(leadSso.success).toBe(true);
+    expect(leadSso.data?.id).toBe("m02");
+    expect(leadSso.data?.name).toBe("Kabir Sethi");
+  });
+
+  it("retrieves seeded accounts for developer reference", async () => {
+    await ensureDbReady();
+    const accounts = await getDemoAccountsAction();
+    expect(accounts.length).toBeGreaterThanOrEqual(13);
+    expect(accounts.some((a: { email: string }) => a.email === "riya.malhotra@aims.example")).toBe(true);
+  });
 });
+

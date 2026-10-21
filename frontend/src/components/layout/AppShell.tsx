@@ -225,8 +225,13 @@ function ActiveMobileNavDrawer({ open, onClose }: { open: boolean; onClose: () =
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const closeMobileMenu = () => setMobileMenuOpen(false);
+
+  if (pathname === "/sign-in") {
+    return <main id="main" className="min-h-dvh w-full">{children}</main>;
+  }
 
   return (
     <div className="relative isolate min-h-dvh flex flex-col bg-bg text-fg">

@@ -6,36 +6,63 @@ import { seedDatabase } from "./seed";
 import path from "node:path";
 import fs from "node:fs";
 
-let dbInstance: any = null;
-let initializedPromise: Promise<void> | null = null;
+interface GlobalDatabaseScope {
+  __aims_pglite_client__?: PGlite;
+  __aims_db_instance__?: any;
+  __aims_db_init_promise__?: Promise<void>;
+  __aims_pglite_test_client__?: PGlite;
+}
 
-async function runAutoMigrationsAndSeed(client: PGlite, db: any) {
-  if (client.waitReady) {
-    try {
-      await client.waitReady;
-    } catch (err: any) {
-      console.warn("[DB Init] Recreating corrupted PGlite database directory:", err.message);
-      const dataDir = path.resolve(process.cwd(), ".data/aims-pglite");
-      fs.rmSync(dataDir, { recursive: true, force: true });
-      fs.mkdirSync(dataDir, { recursive: true });
-      const globalRef = globalThis as unknown as { __aims_pglite_client__?: PGlite };
-      const freshClient = new PGlite(dataDir);
-      globalRef.__aims_pglite_client__ = freshClient;
-      await freshClient.waitReady;
-      client = freshClient;
-      dbInstance = drizzlePglite(freshClient, { schema });
-      db = dbInstance;
-    }
+const globalRef = globalThis as unknown as GlobalDatabaseScope;
+
+function resolveDataDir(): string {
+  const cwd = process.cwd();
+  if (fs.existsSync(path.resolve(cwd, "frontend/.data"))) {
+    return path.resolve(cwd, "frontend/.data/aims-pglite");
   }
+  return path.resolve(cwd, ".data/aims-pglite");
+}
 
+function ensureWritableDirectory(dirPath: string) {
+  if (!fs.existsSync(dirPath)) return;
+  try {
+    fs.chmodSync(dirPath, 0o777);
+  } catch (_) {}
+
+  try {
+    const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = path.join(dirPath, entry.name);
+      try {
+        fs.chmodSync(fullPath, entry.isDirectory() ? 0o777 : 0o666);
+      } catch (_) {}
+      if (entry.isDirectory()) {
+        ensureWritableDirectory(fullPath);
+      }
+    }
+  } catch (_) {}
+}
+
+function wipeDirectorySafely(dirPath: string) {
+  if (!fs.existsSync(dirPath)) return;
+  try {
+    ensureWritableDirectory(dirPath);
+    fs.rmSync(dirPath, { recursive: true, force: true });
+  } catch (err) {
+    console.warn("[DB Safe Wipe warning]", err);
+  }
+}
+
+async function runAutoMigrationsAndSeed(client: PGlite, db: any): Promise<void> {
   // Execute DDL statements sequentially
   for (const statement of MIGRATION_STATEMENTS) {
     try {
       await client.exec(statement);
     } catch (err: any) {
       // Ignore "already exists" errors
-      if (!err.message?.includes("already exists")) {
-        console.warn("[DB Init warning]", err.message);
+      const msg = err?.message || "";
+      if (!msg.includes("already exists") && !msg.includes("duplicate key")) {
+        console.warn("[DB Init warning]", msg);
       }
     }
   }
@@ -48,18 +75,25 @@ async function runAutoMigrationsAndSeed(client: PGlite, db: any) {
   }
 }
 
-function getDatabase() {
-  if (dbInstance) return dbInstance;
+function getDatabase(): any {
+  if (globalRef.__aims_db_instance__) {
+    return globalRef.__aims_db_instance__;
+  }
 
   // 1. Neon PostgreSQL in cloud (when DATABASE_URL is set)
   const databaseUrl = process.env.DATABASE_URL;
-  if (databaseUrl && (databaseUrl.startsWith("postgres://") || databaseUrl.startsWith("postgresql://")) && !databaseUrl.includes("localhost")) {
+  if (
+    databaseUrl &&
+    (databaseUrl.startsWith("postgres://") || databaseUrl.startsWith("postgresql://")) &&
+    !databaseUrl.includes("localhost")
+  ) {
     try {
       const { neon } = require("@neondatabase/serverless");
       const { drizzle } = require("drizzle-orm/neon-http");
       const sql = neon(databaseUrl);
-      dbInstance = drizzle(sql, { schema });
-      return dbInstance;
+      const instance = drizzle(sql, { schema });
+      globalRef.__aims_db_instance__ = instance;
+      return instance;
     } catch (err) {
       console.warn("Could not connect to Neon DB, falling back to local PGlite:", err);
     }
@@ -68,50 +102,89 @@ function getDatabase() {
   // 2. Local Embedded PostgreSQL (PGlite)
   let pgliteClient: PGlite;
   if (process.env.NODE_ENV === "test" || process.env.VITEST) {
-    const globalRef = globalThis as unknown as { __aims_pglite_test_client__?: PGlite };
     if (!globalRef.__aims_pglite_test_client__) {
       globalRef.__aims_pglite_test_client__ = new PGlite();
     }
     pgliteClient = globalRef.__aims_pglite_test_client__;
   } else {
-    const dataDir = path.resolve(process.cwd(), ".data/aims-pglite");
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
-
-    const pidFile = path.join(dataDir, "postmaster.pid");
-    if (fs.existsSync(pidFile)) {
+    if (!globalRef.__aims_pglite_client__) {
+      const dataDir = resolveDataDir();
       try {
-        fs.unlinkSync(pidFile);
-      } catch (_) {}
-    }
+        if (!fs.existsSync(dataDir)) {
+          fs.mkdirSync(dataDir, { recursive: true });
+        }
+        ensureWritableDirectory(dataDir);
 
-    if (process.env.NODE_ENV === "production") {
-      pgliteClient = new PGlite(dataDir);
-    } else {
-      const globalRef = globalThis as unknown as { __aims_pglite_client__?: PGlite };
-      if (!globalRef.__aims_pglite_client__) {
+        const pidFile = path.join(dataDir, "postmaster.pid");
+        if (fs.existsSync(pidFile)) {
+          try {
+            fs.chmodSync(pidFile, 0o666);
+            fs.unlinkSync(pidFile);
+          } catch (_) {}
+        }
+
         globalRef.__aims_pglite_client__ = new PGlite(dataDir);
+      } catch (err: any) {
+        console.warn("[DB Init] Failed to initialize disk PGlite, falling back to in-memory:", err?.message);
+        globalRef.__aims_pglite_client__ = new PGlite();
       }
-      pgliteClient = globalRef.__aims_pglite_client__;
     }
+    pgliteClient = globalRef.__aims_pglite_client__;
   }
 
-  dbInstance = drizzlePglite(pgliteClient, { schema });
+  const instance = drizzlePglite(pgliteClient, { schema });
+  globalRef.__aims_db_instance__ = instance;
 
-  if (!initializedPromise) {
-    initializedPromise = runAutoMigrationsAndSeed(pgliteClient, dbInstance);
+  if (!globalRef.__aims_db_init_promise__) {
+    globalRef.__aims_db_init_promise__ = (async () => {
+      try {
+        if (pgliteClient.waitReady) {
+          try {
+            await pgliteClient.waitReady;
+          } catch (initErr: any) {
+            console.warn("[DB Init] Client waitReady failed, attempting recovery:", initErr?.message);
+            const dataDir = resolveDataDir();
+            wipeDirectorySafely(dataDir);
+            try {
+              fs.mkdirSync(dataDir, { recursive: true });
+              const freshClient = new PGlite(dataDir);
+              await freshClient.waitReady;
+              globalRef.__aims_pglite_client__ = freshClient;
+              pgliteClient = freshClient;
+            } catch (diskFallbackErr: any) {
+              console.warn("[DB Init] Disk recreate failed, using in-memory fallback:", diskFallbackErr?.message);
+              const memClient = new PGlite();
+              await memClient.waitReady;
+              globalRef.__aims_pglite_client__ = memClient;
+              pgliteClient = memClient;
+            }
+            const recoveredDb = drizzlePglite(pgliteClient, { schema });
+            globalRef.__aims_db_instance__ = recoveredDb;
+          }
+        }
+        await runAutoMigrationsAndSeed(pgliteClient, globalRef.__aims_db_instance__);
+      } catch (e) {
+        console.error("[DB Init Fatal]", e);
+      }
+    })();
   }
 
-  return dbInstance;
+  return instance;
 }
 
-export let db = getDatabase();
+export const db: any = new Proxy({} as any, {
+  get(_target, prop) {
+    const instance = getDatabase();
+    const value = instance[prop];
+    return typeof value === "function" ? value.bind(instance) : value;
+  },
+});
 
-export async function ensureDbReady() {
-  getDatabase();
-  if (initializedPromise) {
-    await initializedPromise;
+export async function ensureDbReady(): Promise<any> {
+  const instance = getDatabase();
+  if (globalRef.__aims_db_init_promise__) {
+    await globalRef.__aims_db_init_promise__;
   }
-  return dbInstance;
+  return globalRef.__aims_db_instance__ || instance;
 }
+
